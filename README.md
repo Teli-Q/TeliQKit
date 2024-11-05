@@ -19,7 +19,17 @@
 
 ## 🔗 Related Projects
 
-- [TeliQ](https://github.com/Teli-Q/TeliQ) - TeliQ is a Chat client for macOS.
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Teli-Q/TeliQ">
+        <img src="https://github.com/Teli-Q/TeliQ/blob/main/TeliQ/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png?raw=true" width="128" height="128">
+        <p>TeliQ</p>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## 📄 License
 
