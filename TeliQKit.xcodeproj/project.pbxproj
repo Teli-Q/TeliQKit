@@ -13,9 +13,6 @@
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		3819B29E2CD9A82D004197F8 /* Exceptions for "TeliQKit" folder in "TeliQKit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				NCSocket/NCSocketSendReceiver.swift,
-			);
 			publicHeaders = (
 				TeliQKit.h,
 			);
