@@ -17,19 +17,9 @@
 🧪 Working in Progress
 </pre>
 
-## 🔗 Related Projects
+## ⛏️ Development
 
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/Teli-Q/TeliQ">
-        <img src="https://github.com/Teli-Q/TeliQ/blob/main/TeliQ/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png?raw=true" width="128" height="128">
-        <p>TeliQ</p>
-      </a>
-    </td>
-  </tr>
-</table>
+需要注意的是，TeliQKit 本身不包含任何网络请求功能，它只负责处理与协议相关的消息发送和接收信息类型。如果需要使用网络请求功能，您需要自行实现。
 
 ## 📄 License
 

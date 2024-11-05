@@ -8,6 +8,7 @@
 import Foundation
 
 
+/// 消息构建器，用于构建消息结构体
 public enum NCMessageBuilder {
     
     // MARK: - Text

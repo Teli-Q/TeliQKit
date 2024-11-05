@@ -5,7 +5,7 @@
 //  Created by Wibus on 2024/11/5.
 //
 
-/// Socket通信返回数据的结构体集合
+/// WebSocket 通信返回数据的结构体集合
 public struct NCSocketSendReturn: Codable {
     /// 消息发送后的返回数据结构
     public struct SendMsgReturn: Codable {

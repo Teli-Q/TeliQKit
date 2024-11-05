@@ -7,7 +7,7 @@
 
 import Foundation
 
-// MARK: - Receive Messages
+/// 接收消息类型
 public enum NCReceiveMessage: Codable {
     case text(TextMessage)
     case at(AtMessage)

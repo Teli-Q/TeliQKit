@@ -7,7 +7,7 @@
 
 import Foundation
 
-// MARK: - Send Messages
+/// 发送消息类型
 public enum NCSendMessage: Codable {
     case text(TextMessage)
     case at(AtMessage)
