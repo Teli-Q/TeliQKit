@@ -13,6 +13,9 @@
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		3819B29E2CD9A82D004197F8 /* Exceptions for "TeliQKit" folder in "TeliQKit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				NCSocket/NCSocketSendReceiver.swift,
+			);
 			publicHeaders = (
 				TeliQKit.h,
 			);
@@ -117,6 +120,8 @@
 			);
 			mainGroup = 3819B2772CD9A3EA004197F8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3819B2822CD9A3EA004197F8 /* Products */;
 			projectDirPath = "";
