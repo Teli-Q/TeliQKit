@@ -19,7 +19,9 @@
 
 ## ⛏️ Development
 
-需要注意的是，TeliQKit 本身不包含任何网络请求功能，它只负责处理与协议相关的消息发送和接收信息类型。如果需要使用网络请求功能，您需要自行实现。
+> TeliQKit itself does not contain any network request functionality. It only handles the message sending and receiving information types related to the protocol. 
+> 
+> If you need to use the network request functionality, you need to implement it yourself.
 
 ## 📄 License
 
