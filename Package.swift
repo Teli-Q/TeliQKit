@@ -11,10 +11,13 @@ let package = Package(
             name: "TeliQKit",
             targets: ["TeliQKit"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/daltoniam/Starscream.git", from: "4.0.6")
+    ],
     targets: [
         .target(
-            name: "TeliQKit"),
+            name: "TeliQKit",
+            dependencies: ["Starscream"]), // 在这里添加 Starscream 依赖
         .testTarget(
             name: "TeliQKitTests",
             dependencies: ["TeliQKit"]

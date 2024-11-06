@@ -17,13 +17,27 @@
 🧪 Working in Progress
 </pre>
 
-## ⛏️ Development
+## ⛏️ Usage
 
-> TeliQKit itself does not contain any network request functionality. It only handles the message sending and receiving information types related to the protocol. 
-> 
-> If you need to use the network request functionality, you need to implement it yourself.
+To use this library, add the package to your project and then import it.
 
-Only as a split repository from TeliQ, for planning development.
+```swift
+// swift-tools-version: 5.10
+import PackageDescription
+
+let package = Package(
+    dependencies: [
+        .package(url: "https://github.com/Teli-Q/TeliQKit.git", from: "main")
+    ]
+)
+```
+
+Then, import the package in your source code:
+
+```swift
+import TeliQKit
+```
+
 
 ## 📄 License
 
