@@ -1,6 +1,6 @@
 <p align="center">
   <p align="center">
-    <img src="./TeliQKit/Assets.xcassets/KitIcon.imageset/KitIcon.png" alt="Preview" width="128" />
+    <img src="./Assets.xcassets/KitIcon.imageset/KitIcon.png" alt="Preview" width="128" />
   </p>
 	<h1 align="center"><b>TeliQKit</b></h1>
 	<p align="center">
