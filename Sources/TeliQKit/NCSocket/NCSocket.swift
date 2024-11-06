@@ -67,6 +67,22 @@ public class NCSocket: WebSocketDelegate {
         }
     }
 
+    /// 初始化连接器
+    /// - Parameters:
+    ///   - url: WS 地址
+    ///   - connect: 是否立即自动连接
+    public convenience init(
+        url: String,
+        connect: Bool = true
+    ) {
+        self.init(url: URL(string: url)!, connect: connect)
+    }
+
+    /// 请求处理器
+    public lazy var request: NCSocketRequest = {
+        return NCSocketRequest(socket: self)
+    }()
+
     public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
         switch event {
         case let .connected(headers):
@@ -142,6 +158,14 @@ public class NCSocket: WebSocketDelegate {
         self.socket.write(string: text)
     }
 
+    /// 发送信息结构
+    private struct SendMessage<T: Encodable>: Encodable {
+        let action: String
+        let param: T    
+        let echo: String
+    }
+    
+    /// - Parameters:
     /// 发送文本消息 (包含返回类型)
     /// - Parameters:
     ///   - action: 动作标识符
@@ -150,6 +174,7 @@ public class NCSocket: WebSocketDelegate {
     public func send<T: Encodable, R: Decodable>(
         action: String,
         param: T,
+        echo: String,
         completion: @escaping (Result<R, Error>) -> Void
     ) {
         guard isConnected else {
@@ -158,13 +183,9 @@ public class NCSocket: WebSocketDelegate {
         }
         
         do {
-            let jsonData = try JSONEncoder().encode(param)
-            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
-                completion(.failure(NCSocketError.encodingFailed))
-                return
-            }
-            
-            self.socket.write(string: jsonString)
+            let message = SendMessage<T>(action: action, param: param, echo: echo)
+            let jsonData = try JSONEncoder().encode(message)
+            self.socket.write(data: jsonData)
         } catch {
             completion(.failure(error))
         }
@@ -178,13 +199,20 @@ public class NCSocket: WebSocketDelegate {
     /// 使用示例：
     /// ```swift
     /// let message = NCSocketSender.sendPrivateMsg(userId: 123456, message: [NCMessageBuilder.text("Hello, World!")])
-    /// socket.send(message: message)
+    /// socket.send(message: message, completion: { result in
+    ///     switch result {
+    ///     case .success(let returnMessage):
+    ///         print(returnMessage)
+    ///     case .failure(let error):
+    ///         print(error)
+    ///     }
+    /// })
     /// ```
     public func send<T: Encodable, R: Decodable>(
-        _ message: (action: String, param: T),
+        _ message: (action: String, param: T, echo: String),
         completion: @escaping (Result<R, Error>) -> Void
     ) {
-        self.send(action: message.action, param: message.param, completion: completion)
+        self.send(action: message.action, param: message.param, echo: message.echo, completion: completion)
     }
 
     /// 发送二进制数据
@@ -205,10 +233,4 @@ public class NCSocket: WebSocketDelegate {
             self.connect()
         }
     }
-}
-
-
-public enum NCSocketError: Error {
-    case notConnected
-    case encodingFailed
 }
