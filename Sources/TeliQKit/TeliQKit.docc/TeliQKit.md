@@ -8,18 +8,24 @@ Welcome to use TeliQKit. It is a framework for TeliQ, which is a Chat GUI.
 
 ## Example
 
-Here is an example of how to use TeliQKit:
+以下是一个使用 TeliQKit 的示例：
 
 ```swift
 import TeliQKit
 
-// First, build the message
+// 首先，构建消息
 let message = NCMessageBuilder.text("Hello, World!")
-// Then, build the sender
+// 然后，构建发送器
 let sender = NCSocketSender.sendPrivateMsg(userId: 123456, message: [message])
-// And then, you can use your own network library to send the message
-// via WebSocket
-
+// 然后，你可以使用你自己的网络库发送消息
+// 通过 NCSocket(在 TeliQKit 中)
+let socket = NCSocket(url: URL(string: "ws://localhost:8080/ws")!)
+// 监听全部信息返回
+socket.onText { text in
+    print(text)
+}
+// 发送消息
+socket.send(message: sender)
 ```
 
 ## Topics
