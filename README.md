@@ -23,6 +23,8 @@
 > 
 > If you need to use the network request functionality, you need to implement it yourself.
 
+Only as a split repository from TeliQ, for planning development.
+
 ## 📄 License
 
 TeliQKit is licensed under AGPL-3.0. You can use it for free, but you must open source your code.
