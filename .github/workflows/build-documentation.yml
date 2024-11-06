@@ -15,10 +15,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Xcode
-        run: |
-          sudo xcode-select --install
       
       - name: Build DocC
         run: |
