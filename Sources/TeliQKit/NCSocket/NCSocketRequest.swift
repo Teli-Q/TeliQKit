@@ -28,33 +28,40 @@ public class NCSocketRequest {
         self.socket = socket
     }
 
+    private actor ResumeState {
+        private var hasResumed = false
+
+        init() {}
+
+        func checkAndSetResumed() -> Bool {
+            if hasResumed {
+                return false
+            }
+            hasResumed = true
+            return true
+        }
+    }
+
     private func sendRequest<T: Decodable, P: Encodable>(_ sender: (action: String, param: P, echo: String)) async throws -> T {
-        let lock = NSLock()
-        var hasResumed = false
-        
         return try await withCheckedThrowingContinuation { continuation in
+            let state = ResumeState()
+
             socket.send(sender) { (result: Result<T, Error>) in
-                lock.lock()
-                defer { lock.unlock() }
-                
-                guard !hasResumed else { return }
-                hasResumed = true
-                
-                switch result {
-                case .success(let response):
-                    continuation.resume(returning: response)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
+                Task {
+                    guard await state.checkAndSetResumed() else { return }
+
+                    switch result {
+                    case .success(let response):
+                        continuation.resume(returning: response)
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
-            
+
             Task {
                 try? await Task.sleep(nanoseconds: 5_000_000_000) // 5秒超时
-                lock.lock()
-                defer { lock.unlock() }
-                
-                guard !hasResumed else { return }
-                hasResumed = true
+                guard await state.checkAndSetResumed() else { return }
                 continuation.resume(throwing: NCSocketError.timeout)
             }
         }
@@ -357,7 +364,7 @@ public class NCSocketRequest {
         let sender = NCSocketSender.getGroupFileUrl(groupId: groupId, fileId: fileId)
         return try await sendRequest(sender)
     }
-    
+
     // MARK: - NapCat 协议
 
     /// 获取好友消息历史
