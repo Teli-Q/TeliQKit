@@ -19,7 +19,7 @@
 
 ## ⛏️ Usage
 
-This framework is fully based on [NapCatQQ](https://github.com/NapNeko/NapCatQQ) API development. So you can refer to the [NapCatQQ](https://github.com/NapNeko/NapCatQQ) for more information.
+> This framework is fully based on [NapCat](https://github.com/NapNeko/NapCatQQ) API development. So you can refer to the [NapCat](https://github.com/NapNeko/NapCatQQ) for more information.
 
 To use this library, add the package to your project and then import it.
 
