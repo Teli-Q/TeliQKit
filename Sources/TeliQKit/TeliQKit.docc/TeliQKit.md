@@ -6,6 +6,8 @@ Framework for TeliQ
 
 Welcome to use TeliQKit. It is a framework for TeliQ, which is a Chat GUI.
 
+This framework is fully based on [NapCatQQ](https://github.com/NapNeko/NapCatQQ) API development.
+
 ## Example
 
 以下是一个使用 TeliQKit 的示例：

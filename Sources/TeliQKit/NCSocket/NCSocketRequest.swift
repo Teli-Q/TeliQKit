@@ -29,13 +29,17 @@ public class NCSocketRequest {
     }
 
     private func sendRequest<T: Decodable, P: Encodable>(_ sender: (action: String, param: P, echo: String)) async throws -> T {
+        let lock = NSLock()
+        var hasResumed = false
+        
         return try await withCheckedThrowingContinuation { continuation in
-            var hasResumed = false
-
             socket.send(sender) { (result: Result<T, Error>) in
+                lock.lock()
+                defer { lock.unlock() }
+                
                 guard !hasResumed else { return }
                 hasResumed = true
-
+                
                 switch result {
                 case .success(let response):
                     continuation.resume(returning: response)
@@ -43,9 +47,12 @@ public class NCSocketRequest {
                     continuation.resume(throwing: error)
                 }
             }
-
+            
             Task {
                 try? await Task.sleep(nanoseconds: 5_000_000_000) // 5秒超时
+                lock.lock()
+                defer { lock.unlock() }
+                
                 guard !hasResumed else { return }
                 hasResumed = true
                 continuation.resume(throwing: NCSocketError.timeout)
