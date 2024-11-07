@@ -8,6 +8,63 @@
 import Foundation
 import Starscream
 
+/// WebSocket 响应类型
+public enum NCSocketResponseType {
+    /// 基础响应(带 echo)
+    case base(NCSocketBaseResponse<JSON>)
+    /// 事件通知
+    case event(NCSocketEvent)
+    /// 心跳包
+    case heartbeat(NCSocketHeartbeat)
+    /// 未知类型
+    case unknown(String)
+}
+
+public extension NCSocketEvent {
+    /// 事件类型
+    enum EventType: String {
+        case message
+        case notice
+        case request
+        case meta = "meta_event"
+        case unknown
+
+        public init(rawValue: String) {
+            switch rawValue {
+            case "message": self = .message
+            case "notice": self = .notice
+            case "request": self = .request
+            case "meta_event": self = .meta
+            default: self = .unknown
+            }
+        }
+    }
+
+    /// 获取事件类型
+    var type: EventType {
+        return EventType(rawValue: postType)
+    }
+}
+
+/// WebSocket 事件结构
+public struct NCSocketEvent: Codable {
+    public let postType: String
+    public let time: Int
+    public let selfId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case postType = "post_type"
+        case time
+        case selfId = "self_id"
+    }
+}
+
+/// WebSocket 心跳包结构
+public struct NCSocketHeartbeat: Codable {
+    public let status: String
+    public let interval: Int
+}
+
 /// Socket 连接器
 /// 用于快速建立与服务端建立连接与通信
 /// 支持消息发送与接收
@@ -21,7 +78,25 @@ import Starscream
 /// socket.send(text: "Hello, World!")
 /// ```
 public class NCSocket: WebSocketDelegate {
-    
+    /// 存储等待响应的回调
+    private var waitingResponses: [String: (Result<Data, Error>) -> Void] = [:]
+    /// 等待响应的锁
+    private let waitingResponsesLock = NSLock()
+
+    /// 添加等待响应
+    private func addWaitingResponse(echo: String, callback: @escaping (Result<Data, Error>) -> Void) {
+        self.waitingResponsesLock.lock()
+        self.waitingResponses[echo] = callback
+        self.waitingResponsesLock.unlock()
+    }
+
+    /// 移除等待响应
+    private func removeWaitingResponse(echo: String) -> ((Result<Data, Error>) -> Void)? {
+        self.waitingResponsesLock.lock()
+        defer { waitingResponsesLock.unlock() }
+        return self.waitingResponses.removeValue(forKey: echo)
+    }
+
     /// Socket 连接器
     private var socket: WebSocket
     /// WS 地址
@@ -47,15 +122,16 @@ public class NCSocket: WebSocketDelegate {
     public var onCancelled: (() -> Void)?
     /// 对端关闭回调
     public var onPeerClosed: (() -> Void)?
-
+    /// 响应回调
+    public var onResponse: ((NCSocketResponseType) -> Void)?
 
     /// 初始化连接器
     /// - Parameters:
     ///   - url: WS 地址
     ///   - connect: 是否立即自动连接
     public init(
-      url: URL,
-      connect: Bool = true
+        url: URL,
+        connect: Bool = true
     ) {
         self.wsUrl = url
         var request = URLRequest(url: url)
@@ -79,9 +155,7 @@ public class NCSocket: WebSocketDelegate {
     }
 
     /// 请求处理器
-    public lazy var request: NCSocketRequest = {
-        return NCSocketRequest(socket: self)
-    }()
+    public lazy var request: NCSocketRequest = .init(socket: self)
 
     public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
         switch event {
@@ -102,9 +176,51 @@ public class NCSocket: WebSocketDelegate {
             self.onDisconnected?(reason, Int(code))
 
         case let .text(string):
-            #if DEBUG
-                print("[*] [NCSocket:text] string: \(string)")
-            #endif
+            // #if DEBUG
+            //     print("[*] [NCSocket:text] string: \(string)")
+            // #endif
+            guard let data = string.data(using: .utf8) else { return }
+
+            let decoder = JSONDecoder()
+
+            // 首先检查是否包含 echo 字段，这表明它是一个响应而不是事件
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let echo = json["echo"] as? String,
+               let callback = removeWaitingResponse(echo: echo)
+            {
+                // 这是一个响应消息，应该传递给等待的回调
+                #if DEBUG
+                    print("[*] [NCSocket:response] echo: \(echo)")
+                #endif
+                callback(.success(data))
+                return
+            }
+
+            // 如果没有 echo 字段，那么这可能是一个事件通知
+            do {
+                if let event = try? decoder.decode(NCSocketEvent.self, from: data) {
+                    #if DEBUG
+                        print("[*] [NCSocket:event] event: \(event)")
+                    #endif
+                    self.onResponse?(.event(event))
+                } else if let heartbeat = try? decoder.decode(NCSocketHeartbeat.self, from: data) {
+                    #if DEBUG
+                        print("[*] [NCSocket:heartbeat] heartbeat: \(heartbeat)")
+                    #endif
+                    self.onResponse?(.heartbeat(heartbeat))
+                } else {
+                    #if DEBUG
+                        print("[*] [NCSocket:unknown] unknown: \(string)")
+                    #endif
+                    self.onResponse?(.unknown(string))
+                }
+            } catch {
+                #if DEBUG
+                    print("[*] [NCSocket:error] error: \(error)")
+                #endif
+                self.onResponse?(.unknown(string))
+            }
+
             self.onText?(string)
 
         case let .binary(data):
@@ -161,10 +277,10 @@ public class NCSocket: WebSocketDelegate {
     /// 发送信息结构
     private struct SendMessage<T: Encodable>: Encodable {
         let action: String
-        let param: T    
+        let param: T
         let echo: String
     }
-    
+
     /// - Parameters:
     /// 发送文本消息 (包含返回类型)
     /// - Parameters:
@@ -175,19 +291,43 @@ public class NCSocket: WebSocketDelegate {
         action: String,
         param: T,
         echo: String,
-        completion: @escaping (Result<R, Error>) -> Void
+        completion: @escaping (Result<NCSocketBaseResponse<R>, Error>) -> Void
     ) {
-        guard isConnected else {
+        guard self.isConnected else {
             completion(.failure(NCSocketError.notConnected))
             return
         }
-        
+
         do {
-            let message = SendMessage<T>(action: action, param: param, echo: echo)
+            let message = SendMessage(action: action, param: param, echo: echo)
             let jsonData = try JSONEncoder().encode(message)
+
+            // 添加等待响应的回调
+            self.addWaitingResponse(echo: echo) { result in
+                switch result {
+                case let .success(data):
+                    do {
+                        let decoder = JSONDecoder()
+                        let response = try decoder.decode(NCSocketBaseResponse<R>.self, from: data)
+                        if response.status == "ok" && response.retcode == 0 {
+                            completion(.success(response))
+                        } else {
+                            completion(.failure(NCSocketError.apiError(
+                                code: response.retcode,
+                                message: response.message
+                            )))
+                        }
+                    } catch {
+                        completion(.failure(NCSocketError.decodingError(error)))
+                    }
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+
             self.socket.write(data: jsonData)
         } catch {
-            completion(.failure(error))
+            completion(.failure(NCSocketError.encodingError(error)))
         }
     }
 
@@ -195,7 +335,7 @@ public class NCSocket: WebSocketDelegate {
     /// - Parameters:
     ///   - message: NCSocketSender 生成的消息元组
     ///   - completion: 完成回调，返回解码后的响应数据或错误
-    /// 
+    ///
     /// 使用示例：
     /// ```swift
     /// let message = NCSocketSender.sendPrivateMsg(userId: 123456, message: [NCMessageBuilder.text("Hello, World!")])
@@ -212,7 +352,59 @@ public class NCSocket: WebSocketDelegate {
         _ message: (action: String, param: T, echo: String),
         completion: @escaping (Result<R, Error>) -> Void
     ) {
-        self.send(action: message.action, param: message.param, echo: message.echo, completion: completion)
+        #if DEBUG
+            dump(T.self)
+            dump(R.self)
+        #endif
+
+        guard self.isConnected else {
+            #if DEBUG
+                print("[*] [NCSocket:send] not connected")
+            #endif
+            completion(.failure(NCSocketError.notConnected))
+            return
+        }
+
+        do {
+            let sendMessage = SendMessage(action: message.action, param: message.param, echo: message.echo)
+            let jsonData = try JSONEncoder().encode(sendMessage)
+
+            // 添加等待响应的回调
+            self.addWaitingResponse(echo: message.echo) { result in
+                switch result {
+                case let .success(data):
+                    do {
+                        let decoder = JSONDecoder()
+                        let baseResponse = try decoder.decode(NCSocketBaseResponse<R>.self, from: data)
+                        if baseResponse.status == "ok" && baseResponse.retcode == 0 {
+                            completion(.success(baseResponse.data))
+                        } else {
+                            completion(.failure(NCSocketError.apiError(
+                                code: baseResponse.retcode,
+                                message: baseResponse.message
+                            )))
+                        }
+                    } catch {
+                        #if DEBUG
+                            print("[*] [NCSocket:send] error while decoding: \(error)")
+                        #endif
+                        completion(.failure(error))
+                    }
+                case let .failure(error):
+                    #if DEBUG
+                        print("[*] [NCSocket:send] error while sending: \(error)")
+                    #endif
+                    completion(.failure(error))
+                }
+            }
+
+            self.socket.write(data: jsonData)
+        } catch {
+            #if DEBUG
+                print("[*] [NCSocket:send] error before send: \(error)")
+            #endif
+            completion(.failure(error))
+        }
     }
 
     /// 发送二进制数据
