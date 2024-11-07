@@ -409,7 +409,7 @@ public struct NCSocketReturn: Codable {
     public struct GetStatus: Codable {
         public let online: Bool
         public let good: Bool
-        public let stat: [String: String]
+        public let stat: [String: JSON]
         
         enum CodingKeys: String, CodingKey {
             case online

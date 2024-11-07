@@ -35,7 +35,13 @@ public class NCSocketRequest {
             socket.send(sender) { (result: Result<T, Error>) in
                 guard !hasResumed else { return }
                 hasResumed = true
-                continuation.resume(with: result)
+
+                switch result {
+                case .success(let response):
+                    continuation.resume(returning: (response))
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
             }
 
             Task {
