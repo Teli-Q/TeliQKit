@@ -197,26 +197,19 @@ public class NCSocket: WebSocketDelegate {
             }
 
             // 如果没有 echo 字段，那么这可能是一个事件通知
-            do {
-                if let event = try? decoder.decode(NCSocketEvent.self, from: data) {
-                    #if DEBUG
-                        print("[*] [NCSocket:event] event: \(event)")
-                    #endif
-                    self.onResponse?(.event(event))
-                } else if let heartbeat = try? decoder.decode(NCSocketHeartbeat.self, from: data) {
-                    #if DEBUG
-                        print("[*] [NCSocket:heartbeat] heartbeat: \(heartbeat)")
-                    #endif
-                    self.onResponse?(.heartbeat(heartbeat))
-                } else {
-                    #if DEBUG
-                        print("[*] [NCSocket:unknown] unknown: \(string)")
-                    #endif
-                    self.onResponse?(.unknown(string))
-                }
-            } catch {
+            if let event = try? decoder.decode(NCSocketEvent.self, from: data) {
                 #if DEBUG
-                    print("[*] [NCSocket:error] error: \(error)")
+                    print("[*] [NCSocket:event] event: \(event)")
+                #endif
+                self.onResponse?(.event(event))
+            } else if let heartbeat = try? decoder.decode(NCSocketHeartbeat.self, from: data) {
+                #if DEBUG
+                    print("[*] [NCSocket:heartbeat] heartbeat: \(heartbeat)")
+                #endif
+                self.onResponse?(.heartbeat(heartbeat))
+            } else {
+                #if DEBUG
+                    print("[*] [NCSocket:unknown] unknown: \(string)")
                 #endif
                 self.onResponse?(.unknown(string))
             }

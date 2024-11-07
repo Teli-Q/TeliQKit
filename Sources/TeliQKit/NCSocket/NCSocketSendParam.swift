@@ -402,9 +402,10 @@ public struct NCSocketSendParam: Codable {
     }
 
     /// (go-cqhttp) 用于标记消息已读的参数结构
-    /// (go-cqhttp) 有两种方式：
-    /// (go-cqhttp) - 通过用户 ID 标记私聊消息已读
-    /// (go-cqhttp) - 通过群组 ID 标记群消息已读
+    ///
+    /// 有两种方式：
+    /// - 通过用户 ID 标记私聊消息已读
+    /// - 通过群组 ID 标记群消息已读
     public struct MarkMsgAsRead: Codable {
         /// 用户 ID
         public let userId: Int

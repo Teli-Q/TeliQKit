@@ -26,6 +26,12 @@ socket.onText { text in
 }
 // 发送消息
 socket.send(message: sender)
+// 或者，直接使用 NCSocketRequest
+let request = NCSocketRequest(socket: socket)
+Task {
+    let status = try await request.getStatus()
+    print(status)
+}
 ```
 
 ## Topics

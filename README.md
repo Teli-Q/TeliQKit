@@ -38,6 +38,11 @@ Then, import the package in your source code:
 import TeliQKit
 ```
 
+## 🔗 References
+
+- [huankong-team/node-napcat-ts](https://github.com/huankong-team/node-napcat-ts)
+- [NapNeko/NapCatQQ](https://github.com/NapNeko/NapCatQQ)
+
 
 ## 📄 License
 

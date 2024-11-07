@@ -17,7 +17,7 @@ let package = Package(
     targets: [
         .target(
             name: "TeliQKit",
-            dependencies: ["Starscream"]), // 在这里添加 Starscream 依赖
+            dependencies: ["Starscream"]),
         .testTarget(
             name: "TeliQKitTests",
             dependencies: ["TeliQKit"]

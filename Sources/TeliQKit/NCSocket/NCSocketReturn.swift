@@ -438,7 +438,7 @@ public struct NCSocketReturn: Codable {
     }
     
     /// (go-cqhttp) 获取在线客户端列表返回的参数结构
-    public typealias GetOnlineClients = [Any]
+    public typealias GetOnlineClients = [JSON]
     
     /// (go-cqhttp) 标记消息已读返回的参数结构
     public struct MarkMsgAsRead: Codable {}
